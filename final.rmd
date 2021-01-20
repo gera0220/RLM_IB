@@ -1,0 +1,86 @@
+---
+title: Estudio de Regresión Lineal Múltiple en los Resultados de los Aspirantes a
+  Ingeniería Biomédica en la Universidad Autónoma de Chihuahua
+author: "Gerardo Pérez"
+date: "4/12/2020"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+Para el presente trabajo fueron utilizadas las siguientes librerías:
+
+```{r, message = FALSE}
+library(tidyverse)
+library(readr)
+library(leaps)
+```
+
+Los datos utilizados para realizar el presente estudio fueron obtenidos de uno de los apartados de la página oficial de la Universidad Autónoma de Chihuahua: https://listas.uach.mx/. Dichos datos fueron importados, excluyendo las columnas que representan un problema de privacidad hacia los aspirantes, así como la primera columna que muestra la posición de cada aspirante ya que dichos datos se encuentran ordenados de forma descendente.
+
+```{r, message = FALSE}
+datos <- read_csv("datos.csv") %>% select(-N)
+```
+
+En el primer modelo realizado fueron utilizadas todas las variables presentadas, tomando como regresando la calificación global.
+
+```{r}
+modelo1 <- lm(GLOBAL ~ ., datos)
+summary(modelo1)
+```
+
+De este análisis podemos apreciar la distribución de los residuales, en donde notamos que el 50% de ellos se encuentra entre -0.3408 y 0.1988, así como notar que el residual mínimo es de -12.4387 y el máximo de 14.8572. Dado el comportamiento del 50% se prevé que estos valores son atípicos.
+
+Por otro lado, podemos observar que las variables regresoras tienen un valor de P mucho menor a 0.05 lo que indica que estas variables entran dentro del nivel de significancia del 5% aceptado en este estudio. Además, dichas variables muestran un coeficiente positivo, lo que implica que el aumento en alguna de ellas representa un aumento general, relación lógica dado el estudio.
+
+La ecuación, de esta forma, viene dada por
+
+$GLOBAL = -2.353903 + 0.173348 PMA + 0.175362 PAN + 0.172059 ELE + 0.177687 CLE + 0.077967 MAT + 0.074682 BIO + 0.074435 LES + 0.076661 ING$
+
+la cual se ajusta un 99.96% a los datos. 
+
+Los residuales se muestran en el siguiente gráfico:
+
+```{r, echo = FALSE}
+par(mfrow = c(2, 2))
+plot(modelo1)
+```
+
+Como se puede observar, los errores se distribuyen de formar adecuada según los supuestos del modelo y como se supuso inicialmente, existen valores atípicos en la posición 27 y 188. Estos valores se comportan de esta manera por la variación entre los puntajes obtenidos mayormente en inglés, que contrastan con los puntajes previos.
+
+Además se realizó una prueba de los mejores para determinar, bajo diversas circunstancias, qué modelo tiene un mejor comportamiento. Para ayudar en esta decisión, se creó una matriz que muestra el coeficiente de Mallows, la $R^{2}$ y la $R^{2}$ ajustada.
+
+```{r}
+bs <- regsubsets(GLOBAL ~., datos, nbest = 2)
+(bs_summary <- summary(bs))
+cbind(
+  Cp = bs_summary$cp,
+  R2 = bs_summary$rsq,
+  adj_R2 = bs_summary$adjr2
+)
+```
+
+Como es de suponer, la ecuación con todas las variables regresoras tiene un menor coeficiente de Mallows y una mayor $R^{2}$, sin embargo, bajo ciertas circunstancias un modelo con una menor cantidad de variables regresoras podría ser más útil. 
+
+Por cuestiones académicas escogí el onceavo modelo, el cual considera PMA, PAN, ELE, CLE, LES e ING. 
+
+```{r}
+modelo2 <- lm(GLOBAL ~ PMA + PAN + ELE + CLE + LES + ING, datos)
+summary(modelo2)
+```
+
+La ecuación viene dada por
+
+$GLOBAL = 19.3785 + 0.2266PMA + 0.1837PAN + 0.1884ELE + 0.1674CLE + 0.1104LES + 0.1033ING$
+
+y al igual que la primera ecuación, todas sus variables regresoras son positivas. Además, el modelo se ajusta un 98.79%.
+
+```{r, echo = FALSE}
+par(mfrow = c(2,2))
+plot(modelo2)
+```
+
+La gráfica muestra una correcta distribución de residuos, por lo que los supuestos del modelo se cumplen para esta ecuación. Se puede observar que no se presentan datos atípicos bajo este modelo.
+
+
+
